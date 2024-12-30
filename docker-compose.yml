@@ -1,0 +1,51 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama_new
+    ports:
+      - "11434:11434"  # Exposing Ollama on a new port
+    volumes:
+      - ./ollama:/root/.ollama
+    restart: unless-stopped
+    command: serve
+    networks:
+      - ollama-network-new  # Dedicated network for Ollama
+      - travelscraper_default
+    mem_limit: 8g  # Set memory limit for Ollama container
+
+  ollamadb:
+    image: postgres:14
+    container_name: ollama-db-new
+    environment:
+      POSTGRES_USER: username
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: ollama_data_new  # Database for Ollama
+    volumes:
+      - postgres_data_new:/var/lib/postgresql/data
+    networks:
+      - ollama-network-new  # Connecting to Ollama's network  
+      - travelscraper_default 
+
+  django:
+    build: .
+    container_name: django-new
+    ports:
+      - "8000:8000"
+    environment:
+      - OLLAMA_DB_URL=postgresql://username:password@ollama-db/ollama_data_new
+      - TRAVELSCRAPER_DB_URL='postgresql://username:password@db:5432/hotels_data'
+    depends_on:
+      - ollama
+      - ollamadb
+    networks:
+      - ollama-network-new  # Corrected network name
+      - travelscraper_default
+
+networks:
+  ollama-network-new:  # Defined missing network
+    driver: bridge
+  travelscraper_default:
+    external: true
+
+volumes:
+  postgres_data_new:  # Fixed volume for ollamadb

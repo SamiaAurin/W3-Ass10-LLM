@@ -1,0 +1,60 @@
+pip install django psycopg2
+django-admin startproject ollama_project 
+python manage.py startapp property_info
+********************************************
+We will create a Django CLI application.
+1. Use phi from Ollama 
+2. Read hotel_name prepare a prompt to change hotel_name. Also read room_type , location  to make a description using selected Ollama model. 
+Store that informations into a table with id  
+Acceptance criteria   
+1. Use Django CLI  
+2. Use postgres 
+3. Use Django ORM 
+4. Use Ollama Model is must
+***************************************************
+docker exec -it travelscraper-db-1 bash
+psql -U username -d hotels_data
+SELECT * FROM hotels LIMIT 2;
+______________________
+ id | city_id | hotel_id |           hotel_name            | price |                           hotel_img                            | rating |     room_type      |               location               | latitude | longitude  
+----+---------+----------+---------------------------------+-------+----------------------------------------------------------------+--------+--------------------+--------------------------------------+----------+------------
+  1 |     315 | 1614927  | Hotel Transit Kuala Lumpur      |    20 | images/CggYGladvCGAfBRKACLHMD5ZKqw813_R_250_250_R5_D.jpg_.webp | 4.0    | Standard Twin Room | Near Petronas Twin Towers|China Town |  3.14603 | 101.701502
+  2 |     315 | 23592782 | Expressionz Leisure Suites KLCC |    39 | images/0200l1200090xw9l4C0CB_R_250_250_R5_D.jpg_.webp          | 3.9    | Premium Suite      | Near Petronas Twin Towers            |  3.17154 |  101.71214
+(2 rows)
+
+(END)
+
+
+********************************************
+(venv) PS D:\W3\ollama_django> docker network create shared-network
+0d1fdcff7434275bcc50774870346f58a21cdb2d723623e826bfbb8b0722b687
+(venv) PS D:\W3\ollama_django>
+------------------ Office ------------------------
+(venv) w3e55@w3e55:~/W3-Ass10-LLM$ docker network create ollama-network-new
+d8d280223d21199b244246c870ff9a17def93790301257b9a0935ef4fece7b4e
+(venv) w3e55@w3e55:~/Assignments/ollama_django$ 
+
++++++++++++++++++++++++++++++++++++
+docker exec -it ecommerce_scraper-db-1 bash
+psql -U username -d ecommerce_data
+   or
+docker exec -it ecommerce_scraper-db-1 psql -U username -d ecommerce_data
+
+SELECT * FROM properties LIMIT 5;
+**************************************
+
+docker-compose restart django-new
+docker exec -it django-new python manage.py makemigrations
+docker exec -it django-new python manage.py migrate
+docker exec -it django-new python manage.py rewrite_property_titles
+
+******************************************
+docker exec -it ollama-db-new psql -U username -d ollama_data_new
+
+SELECT * FROM HotelName_Description LIMIT 2;
+
+********************************************************
+docker-compose exec ollama /bin/bash
+ollama list
+ollama pull llama2
+ollama pull phi3
