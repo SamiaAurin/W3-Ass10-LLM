@@ -30,18 +30,28 @@ class Command(BaseCommand):
                     review = "Review not available"
 
                 # Save the generated rating and review to the database
-                PropertyRatingReview.objects.create(
-                    property_id=hotel_id,
-                    rating=rating,
-                    review=review
-                )
+                existing_rating_review = PropertyRatingReview.objects.filter(property_id=hotel_id).first()
 
-                self.stdout.write(self.style.SUCCESS(f"Rating and review for {hotel_name} saved."))
+                if existing_rating_review:
+                    # Update existing record
+                    existing_rating_review.rating = rating
+                    existing_rating_review.review = review
+                    existing_rating_review.save()
+                    self.stdout.write(self.style.SUCCESS(f"Updated rating and review for {hotel_name}"))
+                else:
+                    # Create new record
+                    PropertyRatingReview.objects.create(
+                        property_id=hotel_id,
+                        rating=rating,
+                        review=review
+                    )
+                    self.stdout.write(self.style.SUCCESS(f"Created new rating and review for {hotel_name}"))
+
             except Exception as e:
                 self.stdout.write(self.style.ERROR(f"Error processing hotel {hotel_name}: {str(e)}"))
 
     def generate_rating_and_review(self, hotel_name, price, room_type, location, latitude, longitude):
-        prompt = f"""Generate a rating (out of 5) and a review for the following hotel:
+        prompt = f"""Generate a rating (out of 5) and a review on the basis of what you are giving the rating for the following hotel:
 
         Hotel Name: {hotel_name}
         Price: {price}
@@ -49,6 +59,12 @@ class Command(BaseCommand):
         Location: {location}
         Latitude: {latitude}
         Longitude: {longitude}
+
+        - If the rating is 1 or 2, the review should be negative, highlighting poor aspects such as bad service, poor amenities, or dissatisfaction with the experience.
+        - If the rating is 3, the review should be neutral, pointing out both positive and negative aspects, indicating an average experience.
+        - If the rating is 4 or 5, the review should be positive, praising the hotel for good service, excellent amenities, and a pleasant stay.
+
+        Rating and review should be coherent and match the rating scale.
 
         The response format must be strictly as follows:
         Rating: <numeric value between 1 and 5>
