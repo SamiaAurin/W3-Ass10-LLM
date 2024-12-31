@@ -1,60 +1,28 @@
+************** Create The App if you do not want to clone it *******************
+
 pip install django psycopg2
 django-admin startproject ollama_project 
 python manage.py startapp property_info
-********************************************
-We will create a Django CLI application.
-1. Use phi from Ollama 
-2. Read hotel_name prepare a prompt to change hotel_name. Also read room_type , location  to make a description using selected Ollama model. 
-Store that informations into a table with id .
--------------------------
-3. Create another table with ﬁelds below 
-a. property_id
-b. summary
-SELECT * FROM hotels LIMIT 2; by readiing city_id, hotel_id, hotel_name, price, rating, room_type, location, latitude, longitude
-----------------
-4. Generate property rating and review using LLM Model and store to a new table. You will give a rating out of 1-5 and will give proper review based on the rating.
-a. property_id
-b. ra4ng
-c. review
-SELECT * FROM hotels LIMIT 2; by readiing hotel_name, price,  room_type, location, latitude, longitude
------
-Acceptance criteria   
-1. Use Django CLI  
-2. Use postgres 
-3. Use Django ORM 
-4. Use Ollama Model is must
-***************************************************
-docker exec -it travelscraper-db-1 bash
-psql -U username -d hotels_data
-SELECT * FROM hotels LIMIT 2;
-______________________
- id | city_id | hotel_id |           hotel_name            | price |                           hotel_img                            | rating |     room_type      |               location               | latitude | longitude  
-----+---------+----------+---------------------------------+-------+----------------------------------------------------------------+--------+--------------------+--------------------------------------+----------+------------
-  1 |     315 | 1614927  | Hotel Transit Kuala Lumpur      |    20 | images/CggYGladvCGAfBRKACLHMD5ZKqw813_R_250_250_R5_D.jpg_.webp | 4.0    | Standard Twin Room | Near Petronas Twin Towers|China Town |  3.14603 | 101.701502
-  2 |     315 | 23592782 | Expressionz Leisure Suites KLCC |    39 | images/0200l1200090xw9l4C0CB_R_250_250_R5_D.jpg_.webp          | 3.9    | Premium Suite      | Near Petronas Twin Towers            |  3.17154 |  101.71214
-(2 rows)
 
-(END)
+*************************************************************************************************************
 
+******************* Create a network to share the travelscraper-db-1 and ollamadb-1 *************************
 
-********************************************
-(venv) PS D:\W3\ollama_django> docker network create shared-network
-0d1fdcff7434275bcc50774870346f58a21cdb2d723623e826bfbb8b0722b687
-(venv) PS D:\W3\ollama_django>
------------------- Office ------------------------
-(venv) w3e55@w3e55:~/W3-Ass10-LLM$ docker network create ollama-network-new
-d8d280223d21199b244246c870ff9a17def93790301257b9a0935ef4fece7b4e
-(venv) w3e55@w3e55:~/Assignments/ollama_django$ 
+docker network create shared-network
 
-+++++++++++++++++++++++++++++++++++
+*********************************************************************
+******************* See the tables of ollama_data_new **************
+
 docker exec -it ollama-db-new psql -U username -d ollama_data_new
 
-SELECT * FROM "HotelName_Description" LIMIT 2;
+SELECT * FROM property_summary LIMIT 2;
+SELECT * FROM property_rating_review LIMIT 2;
+
 **************************************
- /////////// Super User /////////////
+ /////////// Super User Creation /////////////
 docker exec -it django-new python manage.py createsuperuser
 
-/////////// TO MIgrate /////////////
+/////////// To Migrate /////////////
 docker exec -it django-new python manage.py makemigrations
 docker exec -it django-new python manage.py migrate
 
@@ -63,15 +31,18 @@ docker exec -it django-new python manage.py rewrite_property_titles
 docker exec -it django-new python manage.py rewrite_property_summary
 docker exec -it django-new python manage.py rewrite_property_rating_review
 
-docker-compose restart django-new
-********************************************************
-docker exec -it django-new python manage.py title_description
 
-********************************************************
+************************ If you want to restart only the django container ********************************
+docker-compose restart django-new
+
+************************ To pull amy model and see the list *****************************
 docker-compose exec ollama /bin/bash
 ollama list
 ollama pull llama2
 ollama pull phi3
 
-**************************************************
-python manage.py tests
+************************ For Testing **************************
+docker exec -it django-new bash
+pip install coverage
+coverage run --source='.' manage.py test
+coverage report

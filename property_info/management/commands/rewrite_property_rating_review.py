@@ -15,7 +15,8 @@ class Command(BaseCommand):
             cursor.execute("""
                 SELECT hotel_id, hotel_name, price, room_type, location, latitude, longitude 
                 FROM hotels 
-                LIMIT 2
+                WHERE hotel_id IS NOT NULL
+                LIMIT 10
             """)
             hotels = cursor.fetchall()
 
@@ -49,15 +50,18 @@ class Command(BaseCommand):
         Latitude: {latitude}
         Longitude: {longitude}
 
-        The rating should be between 1 and 5, based on the overall hotel quality, amenities, and location. The review should provide insights into the hotel's key strengths and weaknesses within 3 lines."""
+        The response format must be strictly as follows:
+        Rating: <numeric value between 1 and 5>
+        Review: <exactly 3 lines, no more than 100 words>
+        """
 
         try:
             response = requests.post(
-                "http://ollama:11434/api/generate",  # URL for Ollama API
+                "http://ollama:11434/api/generate",
                 json={
-                    "model": "phi",
+                    "model": "tinyllama",
                     "prompt": prompt,
-                    "system": "You are a hotel expert. Provide a rating and review in a concise format.",
+                    "system": "You are a professional hotel reviewer. Provide concise, high-quality reviews in exactly 3 lines and no more than 100 words. Maintain a professional tone.",
                     "stream": False
                 },
                 timeout=None
@@ -65,34 +69,38 @@ class Command(BaseCommand):
 
             if response.status_code != 200:
                 self.stdout.write(self.style.ERROR(f"Ollama API error: {response.text}"))
-                return None, None
+                return 0.0, "Review not available"
 
             response_data = response.json()
             if 'response' not in response_data:
-                return None, None
+                return 0.0, "Review not available"
 
             text = response_data['response']
-            rating_match = re.search(r'Rating:\s*(\d+(\.\d+)?)', text)
-            review_match = re.search(r'Review:\s*(.+)', text)
+            
+            # Match variations like [RATING]: or Rating:
+            rating_match = re.search(r'(?:\[RATING\]|Rating):\s*(\d+(\.\d+)?)', text, re.IGNORECASE)
+            review_match = re.search(r'(?:[Review]|.*?):\s*(.+)', text, re.IGNORECASE)
 
-            if not rating_match or not review_match:
-                self.stdout.write(self.style.WARNING(f"Could not parse response: {text}"))
-                return None, None
+            # Extract rating
+            rating = float(rating_match.group(1)) if rating_match else 0.0
 
-            rating = float(rating_match.group(1))
-            review = review_match.group(1).strip()
+            # Extract review or fallback to remaining text
+            review = text.split("\n", 1)[-1].strip() if not review_match else review_match.group(1).strip()
+            review = review[:500]  # Truncate review if it's too long
 
             return rating, review
 
         except requests.exceptions.RequestException as e:
             self.stdout.write(self.style.ERROR(f"Request error: {str(e)}"))
-            return None, None
+            return 0.0, "Review not available"
         except json.JSONDecodeError as e:
             self.stdout.write(self.style.ERROR(f"JSON decode error: {str(e)}"))
-            return None, None
+            return 0.0, "Review not available"
         except Exception as e:
             self.stdout.write(self.style.ERROR(f"Unexpected error: {str(e)}"))
-            return None, None
+            return 0.0, "Review not available"
+
+
 
 
 

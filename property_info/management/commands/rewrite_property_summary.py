@@ -15,9 +15,10 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         with connections['travel'].cursor() as cursor:
             cursor.execute("""
-                SELECT hotel_id, hotel_name, price, rating, room_type, location, latitude, longitude 
-                FROM hotels_data.hotels 
-                LIMIT 10
+                SELECT hotel_id, hotel_name, price, rating, room_type, location, latitude, longitude
+                FROM hotels
+                WHERE hotel_id IS NOT NULL
+                LIMIT 10;
             """)
             hotels = cursor.fetchall()
 
@@ -67,7 +68,7 @@ class Command(BaseCommand):
             response = requests.post(
                 "http://ollama:11434/api/generate",
                 json={
-                    "model": "phi",
+                    "model": "tinyllama",
                     "prompt": prompt,
                     "system": "You are a hotel expert. Respond in a concise, informative summary.",
                     "stream": False
