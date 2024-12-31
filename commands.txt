@@ -35,11 +35,12 @@ docker exec -it django-new python manage.py rewrite_property_rating_review
 ************************ If you want to restart only the django container ********************************
 docker-compose restart django-new
 
-************************ To pull amy model and see the list *****************************
+************************ To pull any model and see the list *****************************
 docker-compose exec ollama /bin/bash
+ollama pull tinyllama  or ollama pull phi
+- To check the list of models run:
 ollama list
-ollama pull llama2
-ollama pull phi3
+
 
 ************************ For Testing **************************
 docker exec -it django-new bash

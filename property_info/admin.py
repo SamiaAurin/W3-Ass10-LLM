@@ -4,8 +4,8 @@ from .models import Hotel, PropertySummary, PropertyRatingReview
 @admin.register(Hotel)
 class HotelAdmin(admin.ModelAdmin):
     list_display = ('hotel_id', 'hotel_name', 'price', 'rating', 'room_type', 'location', 'description')
-    search_fields = ('hotel_name', 'location', 'room_type')
-    list_filter = ('rating', 'price')
+    #search_fields = ('hotel_name', 'location', 'room_type')
+    #list_filter = ('rating', 'price')
     
     def get_queryset(self, request):
         # Override queryset to fetch data from the 'travel' database
