@@ -34,6 +34,8 @@ services:
     environment:
       - OLLAMA_DB_URL=postgresql://username:password@ollama-db/ollama_data_new
       - TRAVELSCRAPER_DB_URL='postgresql://username:password@db:5432/hotels_data'
+    volumes:
+      - .:/app  
     depends_on:
       - ollama
       - ollamadb

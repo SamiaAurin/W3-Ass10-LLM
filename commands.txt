@@ -5,7 +5,19 @@ python manage.py startapp property_info
 We will create a Django CLI application.
 1. Use phi from Ollama 
 2. Read hotel_name prepare a prompt to change hotel_name. Also read room_type , location  to make a description using selected Ollama model. 
-Store that informations into a table with id  
+Store that informations into a table with id .
+-------------------------
+3. Create another table with ﬁelds below 
+a. property_id
+b. summary
+SELECT * FROM hotels LIMIT 2; by readiing city_id, hotel_id, hotel_name, price, rating, room_type, location, latitude, longitude
+----------------
+4. Generate property rating and review using LLM Model and store to a new table. You will give a rating out of 1-5 and will give proper review based on the rating.
+a. property_id
+b. ra4ng
+c. review
+SELECT * FROM hotels LIMIT 2; by readiing hotel_name, price,  room_type, location, latitude, longitude
+-----
 Acceptance criteria   
 1. Use Django CLI  
 2. Use postgres 
@@ -35,26 +47,31 @@ d8d280223d21199b244246c870ff9a17def93790301257b9a0935ef4fece7b4e
 (venv) w3e55@w3e55:~/Assignments/ollama_django$ 
 
 +++++++++++++++++++++++++++++++++++
-docker exec -it ecommerce_scraper-db-1 bash
-psql -U username -d ecommerce_data
-   or
-docker exec -it ecommerce_scraper-db-1 psql -U username -d ecommerce_data
-
-SELECT * FROM properties LIMIT 5;
-**************************************
-
-docker-compose restart django-new
-docker exec -it django-new python manage.py makemigrations
-docker exec -it django-new python manage.py migrate
-docker exec -it django-new python manage.py rewrite_property_titles
-
-******************************************
 docker exec -it ollama-db-new psql -U username -d ollama_data_new
 
-SELECT * FROM HotelName_Description LIMIT 2;
+SELECT * FROM "HotelName_Description" LIMIT 2;
+**************************************
+ /////////// Super User /////////////
+docker exec -it django-new python manage.py createsuperuser
+
+/////////// TO MIgrate /////////////
+docker exec -it django-new python manage.py makemigrations
+docker exec -it django-new python manage.py migrate
+
+///////////  CLI FILES /////////////
+docker exec -it django-new python manage.py rewrite_property_titles
+docker exec -it django-new python manage.py rewrite_property_summary
+docker exec -it django-new python manage.py rewrite_property_rating_review
+
+docker-compose restart django-new
+********************************************************
+docker exec -it django-new python manage.py title_description
 
 ********************************************************
 docker-compose exec ollama /bin/bash
 ollama list
 ollama pull llama2
 ollama pull phi3
+
+**************************************************
+python manage.py tests
