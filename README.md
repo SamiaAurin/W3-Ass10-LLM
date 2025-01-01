@@ -42,6 +42,10 @@ A Django CLI application that uses Ollama to enhance property listings by genera
 
    ```bash
    git clone https://github.com/SamiaAurin/W3-Ass08-Scrapy.git
+   cd W3-Ass08-Scrapy
+   cd travelscraper
+   docker-compose build
+   docker-compose up
    ```
    Ensure the previous project ( https://github.com/SamiaAurin/W3-Ass08-Scrapy.git ) is running correctly before proceeding with this project.
 
