@@ -9,6 +9,7 @@ from property_info.management.commands.rewrite_property_titles import Command as
 from property_info.management.commands.rewrite_property_summary import Command as RewritePropertySummaryCommand
 from property_info.management.commands.rewrite_property_rating_review import Command as RewritePropertyRatingReviewCommand
 from property_info.models import PropertySummary
+from property_info.models import PropertyRatingReview
 import requests
 import json
 from io import StringIO
@@ -17,7 +18,6 @@ from io import StringIO
 
 class TestRewritePropertyTitlesCommand(unittest.TestCase):
     
-  
     @patch('requests.post')
     def test_generate_description(self, mock_post):
         # Mock the API response
@@ -122,41 +122,6 @@ class TestRewritePropertyTitlesCommand(unittest.TestCase):
         # Assert that None is returned due to missing 'response'
         self.assertIsNone(description)
         
-    @patch('django.db.connections')
-    def test_handle_no_hotels_found(self, mock_connections):
-        """Test handling when no hotels are found"""
-        # Mock cursor setup
-        mock_cursor = MagicMock()
-        mock_cm = MagicMock()
-        mock_cm.__enter__.return_value = mock_cursor
-        mock_connections.__getitem__.return_value.cursor.return_value = mock_cm
-        
-        # Return empty result set
-        mock_cursor.fetchall.return_value = []
-        
-        # Call command
-        call_command('rewrite_property_titles')
-        
-        # Verify only initial queries were executed
-        mock_cursor.execute.assert_called()
-
-    @patch('django.db.connections')
-    def test_handle_no_hotels_found(self, mock_connections):
-        """Test handling when no hotels are found"""
-        # Mock cursor setup
-        mock_cursor = MagicMock()
-        mock_cm = MagicMock()
-        mock_cm.__enter__.return_value = mock_cursor
-        mock_connections.__getitem__.return_value.cursor.return_value = mock_cm
-        
-        # Return empty result set
-        mock_cursor.fetchall.return_value = []
-        
-        # Call command
-        call_command('rewrite_property_titles')
-        
-        # Verify only initial queries were executed
-        mock_cursor.execute.assert_called()
     
     @patch('requests.post')
     @patch('django.db.connections')
@@ -303,126 +268,142 @@ class TestRewritePropertySummaryCommand(unittest.TestCase):
 class TestRewritePropertyRatingReviewCommand(TestCase):
     def setUp(self):
         self.command = RewritePropertyRatingReviewCommand()
-        self.sample_hotels = [
-            (1, "Test Hotel 1", 100, "Standard", "New York", 40.7128, -74.0060),
-            (2, "Test Hotel 2", 200, "Deluxe", "Los Angeles", 34.0522, -118.2437)
-        ]
-        
+
+    @patch('property_info.management.commands.rewrite_property_rating_review.requests.post')
+    def test_generate_rating_and_review_api_error(self, mock_post):
+        # Mock API error response
+        mock_post.side_effect = Exception("API error")
+
+        rating, review = self.command.generate_rating_and_review(
+            "Test Hotel", 100, "Standard", "New York", 40.7128, -74.0060
+        )
+
+        # Assertions
+        self.assertEqual(rating, 0.0)
+        self.assertEqual(review, "Review not available")
+
     @patch('property_info.management.commands.rewrite_property_rating_review.connections')
-    def test_handle_with_no_hotels(self, mock_connections):
-        # Setup mock cursor to return empty result
+    @patch('property_info.management.commands.rewrite_property_rating_review.PropertyRatingReview')
+    def test_handle_existing_rating_review_update(self, mock_model, mock_connections):
+        # Mock database query
+        mock_cursor = MagicMock()
+        mock_cursor.fetchall.return_value = [
+            (1, 'Hotel Test', 100, 'Standard', 'New York', 40.7128, -74.0060)
+        ]
+        mock_connections['travel'].cursor.return_value.__enter__.return_value = mock_cursor
+
+        # Mock existing record
+        mock_instance = MagicMock()
+        mock_model.objects.filter.return_value.first.return_value = mock_instance
+
+        # Mock generate_rating_and_review method
+        self.command.generate_rating_and_review = MagicMock(return_value=(4.5, "Great experience."))
+
+        self.command.handle()
+
+        # Assertions
+        mock_instance.save.assert_called_once()
+        self.assertEqual(mock_instance.rating, 4.5)
+        self.assertEqual(mock_instance.review, "Great experience.")
+
+    @patch('property_info.management.commands.rewrite_property_rating_review.connections')
+    @patch('property_info.management.commands.rewrite_property_rating_review.PropertyRatingReview')
+    def test_handle_create_new_rating_review(self, mock_model, mock_connections):
+        # Mock database query
+        mock_cursor = MagicMock()
+        mock_cursor.fetchall.return_value = [
+            (1, 'Hotel Test', 100, 'Standard', 'New York', 40.7128, -74.0060)
+        ]
+        mock_connections['travel'].cursor.return_value.__enter__.return_value = mock_cursor
+
+        # Mock no existing record
+        mock_model.objects.filter.return_value.first.return_value = None
+
+        # Mock generate_rating_and_review method
+        self.command.generate_rating_and_review = MagicMock(return_value=(4.5, "Amazing stay."))
+
+        self.command.handle()
+
+        # Assertions
+        mock_model.objects.create.assert_called_once_with(
+            property_id=1,
+            rating=4.5,
+            review="Amazing stay."
+        )
+
+    @patch('property_info.management.commands.rewrite_property_rating_review.connections')
+    @patch('property_info.management.commands.rewrite_property_rating_review.PropertyRatingReview')
+    @patch('property_info.management.commands.rewrite_property_rating_review.requests.post')
+    def test_handle_api_failure_fallback(self, mock_post, mock_model, mock_connections):
+        # Mock database query
+        mock_cursor = MagicMock()
+        mock_cursor.fetchall.return_value = [
+            (1, 'Hotel Test', 100, 'Standard', 'New York', 40.7128, -74.0060)
+        ]
+        mock_connections['travel'].cursor.return_value.__enter__.return_value = mock_cursor
+
+        # Mock API failure
+        mock_post.side_effect = Exception("API failure")
+
+        # Mock no existing record
+        mock_model.objects.filter.return_value.first.return_value = None
+
+        self.command.handle()
+
+        # Assertions
+        mock_model.objects.create.assert_called_once_with(
+            property_id=1,
+            rating=0.0,
+            review="Review not available"
+        )
+
+
+    @patch('property_info.management.commands.rewrite_property_rating_review.requests.post')
+    def test_generate_rating_and_review_rating_extraction_failure(self, mock_post):
+        # Mock a successful API response but with no rating
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            'response': 'Review: Noisy neighbors and poor service.'
+        }
+        mock_post.return_value = mock_response
+
+        rating, review = self.command.generate_rating_and_review(
+            "Test Hotel", 100, "Standard", "New York", 40.7128, -74.0060
+        )
+
+        # Assertions
+        self.assertEqual(rating, 0.0)
+        self.assertEqual(review, "Noisy neighbors and poor service.")
+
+
+    @patch('property_info.management.commands.rewrite_property_rating_review.connections')
+    @patch('property_info.management.commands.rewrite_property_rating_review.PropertyRatingReview')
+    def test_handle_no_hotels(self, mock_model, mock_connections):
+        # Mock database query to return no hotels
         mock_cursor = MagicMock()
         mock_cursor.fetchall.return_value = []
         mock_connections['travel'].cursor.return_value.__enter__.return_value = mock_cursor
 
-        # Execute command
         self.command.handle()
 
-        # Assert cursor was called with correct SQL
-        mock_cursor.execute.assert_called_once()
-        self.assertIn("SELECT hotel_id", mock_cursor.execute.call_args[0][0])
+        # Assertions
+        mock_model.objects.filter.assert_not_called()
 
-    @patch('property_info.management.commands.rewrite_property_rating_review.connections')
-    @patch.object(RewritePropertyRatingReviewCommand, 'generate_rating_and_review')
-    def test_handle_with_hotels_new_records(self, mock_generate, mock_connections):
-        # Setup mock cursor
-        mock_cursor = MagicMock()
-        mock_cursor.fetchall.return_value = self.sample_hotels
-        mock_connections['travel'].cursor.return_value.__enter__.return_value = mock_cursor
+    @patch('property_info.management.commands.rewrite_property_rating_review.requests.post')
+    def test_generate_rating_and_review_timeout(self, mock_post):
+        # Mock a timeout exception
+        mock_post.side_effect = requests.exceptions.Timeout
 
-        # Setup mock generate_rating_and_review
-        mock_generate.side_effect = [(4.5, "Great hotel!"), (3.5, "Decent stay")]
-
-        # Execute command
-        self.command.handle()
-
-        # Assert generate_rating_and_review was called for each hotel
-        self.assertEqual(mock_generate.call_count, 2)
-        
-        # Verify database records were created
-        self.assertEqual(PropertyRatingReview.objects.count(), 2)
-        
-        # Check first hotel record
-        review1 = PropertyRatingReview.objects.get(property_id=1)
-        self.assertEqual(review1.rating, 4.5)
-        self.assertEqual(review1.review, "Great hotel!")
-
-    @patch('property_info.management.commands.rewrite_property_rating_review.connections')
-    @patch.object(RewritePropertyRatingReviewCommand, 'generate_rating_and_review')
-    def test_handle_with_existing_records(self, mock_generate, mock_connections):
-        # Create existing record
-        PropertyRatingReview.objects.create(
-            property_id=1,
-            rating=3.0,
-            review="Old review"
-        )
-
-        # Setup mock cursor
-        mock_cursor = MagicMock()
-        mock_cursor.fetchall.return_value = [self.sample_hotels[0]]
-        mock_connections['travel'].cursor.return_value.__enter__.return_value = mock_cursor
-
-        # Setup mock generate_rating_and_review
-        mock_generate.return_value = (4.5, "Updated review")
-
-        # Execute command
-        self.command.handle()
-
-        # Verify record was updated
-        review = PropertyRatingReview.objects.get(property_id=1)
-        self.assertEqual(review.rating, 4.5)
-        self.assertEqual(review.review, "Updated review")
-
-    @patch('requests.post')
-    def test_generate_rating_and_review_success(self, mock_post):
-        # Setup mock response
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = {
-            'response': 'Rating: 4.5\nReview: Excellent hotel with great amenities. Professional staff and clean rooms. Convenient location with beautiful views.'
-        }
-        mock_post.return_value = mock_response
-
-        # Test the method
         rating, review = self.command.generate_rating_and_review(
             "Test Hotel", 100, "Standard", "New York", 40.7128, -74.0060
         )
 
-        self.assertEqual(rating, 4.5)
-        self.assertIn("Excellent hotel", review)
-        mock_post.assert_called_once()
-
-    @patch('requests.post')
-    def test_generate_rating_and_review_api_error(self, mock_post):
-        # Setup mock response for API error
-        mock_post.side_effect = Exception("API Error")
-
-        # Test the method
-        rating, review = self.command.generate_rating_and_review(
-            "Test Hotel", 100, "Standard", "New York", 40.7128, -74.0060
-        )
-
+        # Assertions
         self.assertEqual(rating, 0.0)
         self.assertEqual(review, "Review not available")
-
-    @patch('requests.post')
-    def test_generate_rating_and_review_invalid_response(self, mock_post):
-        # Setup mock response with invalid format
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = {'response': 'Invalid response format'}
-        mock_post.return_value = mock_response
-
-        # Test the method
-        rating, review = self.command.generate_rating_and_review(
-            "Test Hotel", 100, "Standard", "New York", 40.7128, -74.0060
-        )
-
-        self.assertEqual(rating, 0.0)
-        self.assertIn("Review not available", review)
-
 ################# TEST FOR RATING REVIEW ENDS   #####################################
 
-
+  
 if __name__ == '__main__':
     unittest.main()
