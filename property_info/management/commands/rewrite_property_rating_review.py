@@ -75,7 +75,7 @@ class Command(BaseCommand):
             response = requests.post(
                 "http://ollama:11434/api/generate",
                 json={
-                    "model": "tinyllama",
+                    "model": "phi",
                     "prompt": prompt,
                     "system": "You are a professional hotel reviewer. Provide concise, high-quality reviews in exactly 3 lines and no more than 100 words. Maintain a professional tone.",
                     "stream": False

@@ -68,7 +68,7 @@ class Command(BaseCommand):
             response = requests.post(
                 "http://ollama:11434/api/generate",
                 json={
-                    "model": "tinyllama",
+                    "model": "phi",
                     "prompt": prompt,
                     "system": "You are a hotel expert. Respond in a concise, informative summary.",
                     "stream": False

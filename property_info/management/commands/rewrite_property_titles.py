@@ -78,28 +78,38 @@ class Command(BaseCommand):
                     - Room type: {room_type}
                     - Location: {location}"""
 
-        return self.call_ollama_api(prompt)
+        description = self.call_ollama_api(prompt)
+
+        # Fallback logic: if description is None, return a default message
+        if not description:
+            return "Description not available"
+
+        return description
+
 
     def call_ollama_api(self, prompt):
         try:
             response = requests.post(
                 "http://ollama:11434/api/generate",
                 json={
-                    "model": "tinyllama",
+                    "model": "phi",
                     "prompt": prompt,
                     "system": "You are a hotel expert. Respond in a concise, informative way.",
                     "stream": False
                 },
                 timeout=None
             )
+            
+            #print(f"Response Status: {response.status_code}")  # Debugging line
+            #print(f"Response Data: {response.json()}")  # Debugging line
 
             if response.status_code != 200:
                 self.stdout.write(self.style.ERROR(f"Ollama API error: {response.text}"))
                 return None
 
             response_data = response.json()
-            if 'response' not in response_data:
-                return None
+            if 'response' not in response_data or not response_data['response']:
+              return None
 
             return response_data['response']
 
@@ -112,3 +122,5 @@ class Command(BaseCommand):
         except Exception as e:
             self.stdout.write(self.style.ERROR(f"Unexpected error: {str(e)}"))
             return None
+
+    
