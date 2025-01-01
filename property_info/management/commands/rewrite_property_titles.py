@@ -25,7 +25,7 @@ class Command(BaseCommand):
 
             # Fetch hotel data
             with connections['travel'].cursor() as cursor:
-                cursor.execute("SELECT hotel_id, hotel_name, room_type, location FROM hotels WHERE hotel_id IS NOT NULL")
+                cursor.execute("SELECT hotel_id, hotel_name, room_type, location FROM hotels WHERE hotel_id IS NOT NULL LIMIT 2")
                 hotels = cursor.fetchall()
 
             for hotel_id, hotel_name, room_type, location in hotels:
