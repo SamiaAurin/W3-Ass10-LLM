@@ -31,6 +31,7 @@ A Django CLI application that uses Ollama to enhance property listings by genera
  
 
 ## Installation
+
 1. Clone the repositories:  
 
    ```bash
@@ -75,7 +76,28 @@ A Django CLI application that uses Ollama to enhance property listings by genera
    ```
    **Note:** The Docker build process may take some time to complete. This is because the `Dockerfile` and `docker-compose.yml` are configured to automatically install all dependencies listed in the `requirements.txt` file during the build phase. Please be patient while the setup is finalized.
 
-4. Ollama Model:
+4. Creating a Shared Docker Network
+
+   To enable seamless communication between this project's database and the scraper's database, you need to create a shared Docker network. This can be done using the following command:
+
+   ```bash
+   docker network create ollama-network-new
+   ```
+   This command creates a custom Docker network named `ollama-network-new`. The network facilitates inter-service communication by allowing containers from different projects to connect securely. In the `docker-compose.yml` file, ensure the following networks are added to each service under the networks section:
+
+   ```bash
+      networks:
+         - ollama-network-new  # Dedicated network for the Ollama project
+         - travelscraper_default  # Network for the Scraper project
+   ```
+   **Description:**
+      - **ollama-network-new:** This is a custom network created for the current project to ensure isolated and efficient communication.
+      - **travelscraper_default:** This is the default network created by Docker Compose for the scraper project, allowing shared access between the two projects.
+   Adding these networks to each service ensures that all containers (e.g., Django app, database, etc.) in the Ollama project can communicate with the containers in the scraper project over a shared network.
+
+   Remember to restart the Docker containers after updating the `docker-compose.yml` file to apply the changes.
+
+5. Ollama Model:
 
    ```bash
    docker-compose exec ollama /bin/bash

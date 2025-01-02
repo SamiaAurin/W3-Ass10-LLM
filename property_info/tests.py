@@ -148,6 +148,7 @@ class TestRewritePropertyTitlesCommand(unittest.TestCase):
 
 
 ################# TEST FOR TITLE AND DESCRIPTION ENDS ############################
+
 ################# TEST FOR SUMMARY STARTS   #####################################
 class TestRewritePropertySummaryCommand(unittest.TestCase):
     def setUp(self):
@@ -402,6 +403,7 @@ class TestRewritePropertyRatingReviewCommand(TestCase):
         # Assertions
         self.assertEqual(rating, 0.0)
         self.assertEqual(review, "Review not available")
+        
 ################# TEST FOR RATING REVIEW ENDS   #####################################
 
   

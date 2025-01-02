@@ -8,7 +8,7 @@ python manage.py startapp property_info
 
 ******************* Create a network to share the travelscraper-db-1 and ollamadb-1 *************************
 
-docker network create shared-network
+docker network create ollama-network-new
 
 *********************************************************************
 ******************* See the tables of ollama_data_new **************
