@@ -12,7 +12,6 @@ A Django CLI application that uses Ollama to enhance property listings by genera
 5. [Database Models](#database-models)  
 6. [Usage](#usage)  
    - [Command-Line Utilities](#command-line-utilities)  
-   - [Efficient Data Retrieval](#efficient-data-retrieval)
 7. [Testing](#testing)  
 8. [Troubleshooting](#troubleshooting)
 
@@ -253,31 +252,6 @@ This project includes three Django CLI commands designed for automated processin
      docker exec -it django-new python manage.py rewrite_property_rating_review
      ```
 These CLI commands simplify the workflow by allowing seamless integration and execution directly from the command line.
-
-## Efficient Data Retrieval
-
-In order to optimize performance and reduce execution time, especially when working with a large number of rows in the `hotels` table, the project uses a limited data selection approach. By default, the project retrieves only the first 10 rows from the `hotels` table, ensuring faster processing.
-
-This is achieved using the following query:
-```bash
-with connections['travel'].cursor() as cursor:
-    cursor.execute("""
-        SELECT hotel_id, hotel_name, price, room_type, location, latitude, longitude
-        FROM hotels 
-        WHERE hotel_id IS NOT NULL
-        LIMIT 10
-    """)
-    hotels = cursor.fetchall()
-```
-If you need to retrieve fewer rows, you can adjust the LIMIT clause to a smaller number, such as `LIMIT 2` or `LIMIT 5`, depending on your requirements.
-
-Be aware that running the query without a `LIMIT` clause, like this:
-```bash
-SELECT hotel_id, hotel_name, price, room_type, location, latitude, longitude
-FROM hotels
-WHERE hotel_id IS NOT NULL
-```
-will retrieve all rows in the table, which can significantly increase processing time, particularly if the table contains hundreds of rows.
 
 ---
 
