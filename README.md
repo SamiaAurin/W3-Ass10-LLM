@@ -23,12 +23,14 @@ A Django CLI application that uses Ollama to enhance property listings by genera
 - **CLI Interface**: Provides an easy-to-use command-line interface for managing operations.  
 - **Database Storage**: Stores all generated content (rewritten data, summaries, ratings, and reviews) in a PostgreSQL database for persistence.  
 
+---
+
 ## Prerequisites
 - **Python**: Version 3.9 or above  
 - **Docker and Docker Compose**: Follow the official Docker installation guide to install Docker on your system: [Get Docker](https://docs.docker.com/get-docker/). For Docker Compose, refer to the official installation instructions: [Install Docker Compose](https://docs.docker.com/compose/install/) 
 - **Ollama**: Installed and configured for local LLM interaction.   
+ ---
  
-
 ## Installation
 
 1. Clone the repositories:  

@@ -403,9 +403,9 @@ class TestRewritePropertyRatingReviewCommand(TestCase):
         # Assertions
         self.assertEqual(rating, 0.0)
         self.assertEqual(review, "Review not available")
-        
-################# TEST FOR RATING REVIEW ENDS   #####################################
 
+################# TEST FOR RATING REVIEW ENDS   #####################################
+  
   
 if __name__ == '__main__':
     unittest.main()
